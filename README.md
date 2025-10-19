@@ -94,18 +94,18 @@ AA:BB:CC:DD:EE:FF
 
 Add this to your Home Assistant configuration:
 
-### configuration.yaml
+### MQTT Buttons (configuration.yaml)
 ```yaml
 mqtt:
   button:
     - name: "Wake Desktop PC"
       command_topic: "home/wake"
-      payload_press: "desktop"
+      payload_press: "AA:BB:CC:DD:EE:FF"  # Your desktop MAC address
       icon: "mdi:power"
       
     - name: "Wake Gaming PC"
       command_topic: "home/wake" 
-      payload_press: "gaming-pc"
+      payload_press: "11:22:33:44:55:66"  # Your gaming PC MAC address
       icon: "mdi:gamepad-variant"
 ```
 
@@ -118,15 +118,19 @@ script:
       - service: mqtt.publish
         data:
           topic: "home/wake"
-          payload: "desktop"
+          payload: "AA:BB:CC:DD:EE:FF"  # Your desktop MAC address
           
-  wake_gaming_pc_direct:
-    alias: "Wake Gaming PC (Direct MAC)"
+  wake_gaming_pc_with_ip:
+    alias: "Wake Gaming PC (with target IP)"
     sequence:
       - service: mqtt.publish
         data:
           topic: "home/wake"
-          payload: "AA:BB:CC:DD:EE:FF"  # Direct MAC address
+          payload: >
+            {
+              "mac_address": "11:22:33:44:55:66",
+              "ip_address": "192.168.1.50"
+            }
           
   wake_server_with_ip:
     alias: "Wake Server with Target IP"
@@ -154,7 +158,7 @@ automation:
       - service: mqtt.publish
         data:
           topic: "home/wake"
-          payload: "desktop"
+          payload: "AA:BB:CC:DD:EE:FF"  # Your PC's MAC address
 ```
 
 ## Development Setup
