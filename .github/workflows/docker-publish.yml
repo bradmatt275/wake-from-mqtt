@@ -72,7 +72,6 @@ jobs:
         echo "docker run -d \\" >> $GITHUB_STEP_SUMMARY
         echo "  --name mqtt-wol-service \\" >> $GITHUB_STEP_SUMMARY
         echo "  --network host \\" >> $GITHUB_STEP_SUMMARY
-        echo "  -v \$(pwd)/config.yaml:/app/config.yaml:ro \\" >> $GITHUB_STEP_SUMMARY
         echo "  -e MQTT_BROKER=\"your-mqtt-broker-ip\" \\" >> $GITHUB_STEP_SUMMARY
         echo "  -e MQTT_TOPIC=\"home/wake\" \\" >> $GITHUB_STEP_SUMMARY
         echo "  -e LOG_LEVEL=\"INFO\" \\" >> $GITHUB_STEP_SUMMARY
@@ -96,8 +95,6 @@ jobs:
         echo "      - MQTT_PASSWORD=\${MQTT_PASSWORD}" >> $GITHUB_STEP_SUMMARY
         echo "      - MQTT_TOPIC=\${MQTT_TOPIC:-home/wake}" >> $GITHUB_STEP_SUMMARY
         echo "      - LOG_LEVEL=\${LOG_LEVEL:-INFO}" >> $GITHUB_STEP_SUMMARY
-        echo "    volumes:" >> $GITHUB_STEP_SUMMARY
-        echo "      - ./config.yaml:/app/config.yaml:ro" >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### Environment Variables:" >> $GITHUB_STEP_SUMMARY

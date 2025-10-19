@@ -234,8 +234,8 @@ docker build -t mqtt-wol-service .
 docker run -d \
   --name mqtt-wol \
   --network host \
-  -v $(pwd)/config.yaml:/app/config.yaml:ro \
   -e MQTT_BROKER=192.168.1.100 \
+  -e MQTT_TOPIC=home/wake \
   mqtt-wol-service
 ```
 
@@ -284,10 +284,10 @@ Most router admin interfaces show connected devices with MAC addresses.
    - Check authentication credentials if required
    - Ensure broker is accessible from container network
 
-3. **Device not found errors**
-   - Check device name spelling in MQTT message
-   - Verify device is configured in config.yaml
-   - Check logs for available device list
+3. **Invalid MAC address errors**
+   - Check MAC address format (AA:BB:CC:DD:EE:FF or AA-BB-CC-DD-EE-FF)
+   - Verify MAC address is correct for target device
+   - Check logs for parsing errors
 
 ### Viewing Logs
 
@@ -316,7 +316,7 @@ wakeonlan AA:BB:CC:DD:EE:FF
 
 - The container runs as a non-root user for security
 - Consider using MQTT over TLS for production deployments
-- Store sensitive credentials in environment variables, not config files
+- Store sensitive credentials in environment variables
 - Review firewall rules if WOL packets aren't reaching targets
 
 ## Contributing
