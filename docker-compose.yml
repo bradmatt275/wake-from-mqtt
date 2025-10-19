@@ -4,7 +4,7 @@ services:
   mqtt-wol:
     # Use pre-built image from GitHub Container Registry
     # To build locally instead, uncomment the 'build: .' line and comment out the 'image' line
-    image: ghcr.io/matt-brady/wake-from-mqtt:latest
+    image: ghcr.io/bradmatt275/wake-from-mqtt:latest
     # build: .
     container_name: mqtt-wol-service
     restart: unless-stopped

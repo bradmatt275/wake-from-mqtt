@@ -1,5 +1,8 @@
 # MQTT Wake-on-LAN Service
 
+[![Build and Push Docker Image](https://github.com/bradmatt275/wake-from-mqtt/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/bradmatt275/wake-from-mqtt/actions/workflows/docker-publish.yml)
+[![Docker Pulls](https://img.shields.io/docker/pulls/ghcr.io/bradmatt275/wake-from-mqtt)](https://github.com/bradmatt275/wake-from-mqtt/pkgs/container/wake-from-mqtt)
+
 A lightweight Python service that listens to MQTT messages and sends Wake-on-LAN (WOL) packets to wake up devices on your network. Perfect for Home Assistant integration and cross-VLAN Wake-on-LAN scenarios.
 
 ## Features
@@ -245,10 +248,10 @@ docker run -d \
    - Enable WOL in network adapter settings
    - Some devices may need "Magic Packet" specifically enabled
 
-2. **Network considerations**
-   - The service must be on the same network segment as target devices
-   - For cross-VLAN scenarios, ensure WOL packets can traverse VLANs
-   - Use `network_mode: host` in Docker for best compatibility
+- **Network considerations**
+  - The service must be on the same network segment as target devices
+  - For cross-VLAN scenarios, ensure WOL packets can traverse VLANs (or deploy the container on the target VLAN)
+  - Use `network_mode: host` in Docker for best compatibility, or configure custom networks with proper routing
 
 ### Finding MAC Addresses
 
@@ -326,12 +329,22 @@ wakeonlan AA:BB:CC:DD:EE:FF
 
 ## License
 
-This project is open source. Feel free to use and modify as needed.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
 
 ## Support
 
 For issues and questions:
-1. Check the troubleshooting section above
+1. Check the [troubleshooting section](#troubleshooting) above
 2. Review the logs for error messages
 3. Verify your network and device configuration
-4. Open an issue with detailed information about your setup
+4. Open an [issue](https://github.com/bradmatt275/wake-from-mqtt/issues) with detailed information about your setup
+
+## Acknowledgments
+
+- Built with [paho-mqtt](https://pypi.org/project/paho-mqtt/) for MQTT communication
+- Uses [wakeonlan](https://pypi.org/project/wakeonlan/) for sending magic packets
+- Inspired by the need for cross-VLAN Wake-on-LAN in home networks

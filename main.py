@@ -4,6 +4,8 @@ MQTT Wake-on-LAN Service
 
 A Python service that listens to MQTT messages and sends Wake-on-LAN packets
 to wake up devices on the network.
+
+Version: 1.0.0
 """
 
 import json
@@ -186,7 +188,7 @@ class MQTTWOLService:
             
     def run(self):
         """Start the MQTT WOL service."""
-        self.logger.info("Starting MQTT Wake-on-LAN service")
+        self.logger.info("Starting MQTT Wake-on-LAN service v1.0.0")
         
         # Log configuration (without sensitive data)
         self.logger.info(f"MQTT Broker: {self.config['mqtt']['broker']}:{self.config['mqtt']['port']}")
