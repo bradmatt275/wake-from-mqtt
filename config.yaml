@@ -1,0 +1,29 @@
+# MQTT Wake-on-LAN Service Configuration
+#
+# MQTT settings are configured via environment variables:
+# - MQTT_BROKER: Your MQTT broker IP address
+# - MQTT_PORT: MQTT broker port (default: 1883)
+# - MQTT_USERNAME: MQTT username (optional)
+# - MQTT_PASSWORD: MQTT password (optional)
+# - MQTT_TOPIC: Topic to listen for wake commands (default: "home/wake")
+# - LOG_LEVEL: Logging level (DEBUG, INFO, WARNING, ERROR)
+
+# Optional: Pre-configured devices for convenience
+# You can now send MAC addresses directly via MQTT, so this list is optional!
+devices:
+  - name: "example-device"
+    mac_address: "AA:BB:CC:DD:EE:FF"  # Replace with actual MAC address
+    ip_address: null  # Optional: specific IP to send WOL packet to
+
+# Usage Examples:
+#
+# 1. Send device name (uses config above):
+#    mosquitto_pub -h broker -t "home/wake" -m "example-device"
+#
+# 2. Send MAC address directly (no config needed):
+#    mosquitto_pub -h broker -t "home/wake" -m "AA:BB:CC:DD:EE:FF"
+#
+# 3. Send JSON with MAC and optional IP:
+#    mosquitto_pub -h broker -t "home/wake" -m '{"mac_address": "AA:BB:CC:DD:EE:FF", "ip_address": "192.168.1.50"}'
+#
+# Device configuration is now optional - you can wake any device by sending its MAC address!

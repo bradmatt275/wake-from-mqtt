@@ -1,0 +1,129 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      if: github.event_name != 'pull_request'
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata (tags, labels) for Docker
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64,linux/arm64
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Generate deployment instructions
+      if: github.event_name != 'pull_request'
+      run: |
+        echo "## 🚀 Deployment Instructions" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Your MQTT Wake-on-LAN Docker image has been built and pushed to GitHub Container Registry!" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Pull and run the image:" >> $GITHUB_STEP_SUMMARY
+        echo '```bash' >> $GITHUB_STEP_SUMMARY
+        echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "docker run -d \\" >> $GITHUB_STEP_SUMMARY
+        echo "  --name mqtt-wol-service \\" >> $GITHUB_STEP_SUMMARY
+        echo "  --network host \\" >> $GITHUB_STEP_SUMMARY
+        echo "  -v \$(pwd)/config.yaml:/app/config.yaml:ro \\" >> $GITHUB_STEP_SUMMARY
+        echo "  -e MQTT_BROKER=\"your-mqtt-broker-ip\" \\" >> $GITHUB_STEP_SUMMARY
+        echo "  -e MQTT_TOPIC=\"home/wake\" \\" >> $GITHUB_STEP_SUMMARY
+        echo "  -e LOG_LEVEL=\"INFO\" \\" >> $GITHUB_STEP_SUMMARY
+        echo "  --restart unless-stopped \\" >> $GITHUB_STEP_SUMMARY
+        echo "  ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Or use docker-compose:" >> $GITHUB_STEP_SUMMARY
+        echo '```yaml' >> $GITHUB_STEP_SUMMARY
+        echo "version: '3.8'" >> $GITHUB_STEP_SUMMARY
+        echo "services:" >> $GITHUB_STEP_SUMMARY
+        echo "  mqtt-wol:" >> $GITHUB_STEP_SUMMARY
+        echo "    image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
+        echo "    container_name: mqtt-wol-service" >> $GITHUB_STEP_SUMMARY
+        echo "    restart: unless-stopped" >> $GITHUB_STEP_SUMMARY
+        echo "    network_mode: host" >> $GITHUB_STEP_SUMMARY
+        echo "    environment:" >> $GITHUB_STEP_SUMMARY
+        echo "      - MQTT_BROKER=\${MQTT_BROKER}" >> $GITHUB_STEP_SUMMARY
+        echo "      - MQTT_PORT=\${MQTT_PORT:-1883}" >> $GITHUB_STEP_SUMMARY
+        echo "      - MQTT_USERNAME=\${MQTT_USERNAME}" >> $GITHUB_STEP_SUMMARY
+        echo "      - MQTT_PASSWORD=\${MQTT_PASSWORD}" >> $GITHUB_STEP_SUMMARY
+        echo "      - MQTT_TOPIC=\${MQTT_TOPIC:-home/wake}" >> $GITHUB_STEP_SUMMARY
+        echo "      - LOG_LEVEL=\${LOG_LEVEL:-INFO}" >> $GITHUB_STEP_SUMMARY
+        echo "    volumes:" >> $GITHUB_STEP_SUMMARY
+        echo "      - ./config.yaml:/app/config.yaml:ro" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Environment Variables:" >> $GITHUB_STEP_SUMMARY
+        echo "- \`MQTT_BROKER\`: Your MQTT broker IP address" >> $GITHUB_STEP_SUMMARY
+        echo "- \`MQTT_PORT\`: MQTT broker port (default: 1883)" >> $GITHUB_STEP_SUMMARY
+        echo "- \`MQTT_USERNAME\`: MQTT username (optional)" >> $GITHUB_STEP_SUMMARY
+        echo "- \`MQTT_PASSWORD\`: MQTT password (optional)" >> $GITHUB_STEP_SUMMARY
+        echo "- \`MQTT_TOPIC\`: Topic to listen for wake commands (default: home/wake)" >> $GITHUB_STEP_SUMMARY
+        echo "- \`LOG_LEVEL\`: Logging level (DEBUG, INFO, WARNING, ERROR)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Send Wake Commands:" >> $GITHUB_STEP_SUMMARY
+        echo '```bash' >> $GITHUB_STEP_SUMMARY
+        echo "# Simple device name" >> $GITHUB_STEP_SUMMARY
+        echo "mosquitto_pub -h your-mqtt-broker -t \"home/wake\" -m \"desktop\"" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "# JSON format" >> $GITHUB_STEP_SUMMARY
+        echo "mosquitto_pub -h your-mqtt-broker -t \"home/wake\" -m '{\"device\": \"desktop\"}'" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Home Assistant Integration:" >> $GITHUB_STEP_SUMMARY
+        echo "Add to your Home Assistant \`configuration.yaml\`:" >> $GITHUB_STEP_SUMMARY
+        echo '```yaml' >> $GITHUB_STEP_SUMMARY
+        echo "mqtt:" >> $GITHUB_STEP_SUMMARY
+        echo "  button:" >> $GITHUB_STEP_SUMMARY
+        echo "    - name: \"Wake Desktop PC\"" >> $GITHUB_STEP_SUMMARY
+        echo "      command_topic: \"home/wake\"" >> $GITHUB_STEP_SUMMARY
+        echo "      payload_press: \"desktop\"" >> $GITHUB_STEP_SUMMARY
+        echo "      icon: \"mdi:power\"" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY

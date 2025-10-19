@@ -1,0 +1,16 @@
+# Docker Compose override for local testing
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.test.yml up
+
+version: '3.8'
+
+services:
+  mqtt-wol:
+    # Build locally instead of using published image
+    build: .
+    # Remove the image line to use local build
+    environment:
+      # Test environment settings
+      - MQTT_BROKER=host.docker.internal  # Points to host machine
+      - MQTT_PORT=1883
+      - MQTT_TOPIC=test/wake  # Use test topic
+      - LOG_LEVEL=DEBUG  # More verbose logging
