@@ -13,4 +13,5 @@ services:
       - MQTT_BROKER=host.docker.internal  # Points to host machine
       - MQTT_PORT=1883
       - MQTT_TOPIC=test/wake  # Use test topic
+      - MQTT_USE_TLS=false
       - LOG_LEVEL=DEBUG  # More verbose logging

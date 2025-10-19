@@ -14,7 +14,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application files
 COPY main.py .
-COPY config.yaml .
 
 # Create logs directory and set permissions
 RUN mkdir -p /app/logs && chown -R appuser:appuser /app

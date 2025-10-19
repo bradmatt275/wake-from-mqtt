@@ -18,22 +18,12 @@ A lightweight Python service that listens to MQTT messages and sends Wake-on-LAN
 
 1. **Clone or download this project**
 
-2. **Configure your devices**
+2. **Set up your MQTT broker connection**
    
-   Edit `config.yaml` and add your devices:
-   ```yaml
-   devices:
-     - name: "my-pc"
-       mac_address: "AA:BB:CC:DD:EE:FF"  # Your device's MAC address
-       ip_address: null  # Use null for broadcast, or specify IP
-   ```
-
-3. **Set up your MQTT broker connection**
-   
-   Either edit `config.yaml` or create a `.env` file:
+   Create a `.env` file:
    ```bash
    cp .env.example .env
-   # Edit .env with your MQTT broker details
+   # Edit .env with your MQTT broker details (MQTT_BROKER is required)
    ```
 
 4. **Start the service**
@@ -54,70 +44,37 @@ A lightweight Python service that listens to MQTT messages and sends Wake-on-LAN
 
 ## Configuration
 
-### config.yaml
-
-The main configuration file contains MQTT broker settings and device definitions:
-
-```yaml
-mqtt:
-  broker: "192.168.1.100"  # Your MQTT broker IP
-  port: 1883
-  username: null  # Optional authentication
-  password: null  # Optional authentication
-  use_tls: false  # Enable for secure connections
-  topic: "home/wake"  # Topic to listen for wake commands
-
-devices:
-  - name: "desktop"
-    mac_address: "AA:BB:CC:DD:EE:FF"
-    ip_address: null  # Broadcast WOL
-    
-  - name: "server"
-    mac_address: "11:22:33:44:55:66"
-    ip_address: "192.168.1.50"  # Targeted WOL
-```
+All configuration is done via environment variables - no config files needed!
 
 ### Environment Variables
 
 You can override any configuration using environment variables:
 
-- `MQTT_BROKER` - MQTT broker hostname/IP
+- `MQTT_BROKER` - MQTT broker hostname/IP (**required**)
 - `MQTT_PORT` - MQTT broker port (default: 1883)
 - `MQTT_USERNAME` - MQTT username (optional)
 - `MQTT_PASSWORD` - MQTT password (optional)
-- `MQTT_TOPIC` - MQTT topic to listen on
+- `MQTT_TOPIC` - MQTT topic to listen on (default: "home/wake")
+- `MQTT_USE_TLS` - Enable TLS/SSL (default: false)
 - `LOG_LEVEL` - Logging level (DEBUG, INFO, WARNING, ERROR)
-- `CONFIG_FILE` - Path to configuration file
 
 ## MQTT Message Format
 
 The service accepts multiple message formats:
 
-### 1. Simple Device Name
-```
-my-pc
-```
-
-### 2. Direct MAC Address
+### 1. Direct MAC Address (Recommended)
 ```
 AA:BB:CC:DD:EE:FF
 ```
 
-### 3. JSON Format with Device Name
-```json
-{
-  "device": "my-pc"
-}
-```
-
-### 4. JSON Format with Direct MAC Address
+### 2. JSON Format with Direct MAC Address
 ```json
 {
   "mac_address": "AA:BB:CC:DD:EE:FF"
 }
 ```
 
-### 5. JSON Format with MAC Address and Target IP
+### 3. JSON Format with MAC Address and Target IP
 ```json
 {
   "mac_address": "AA:BB:CC:DD:EE:FF",
@@ -127,8 +84,7 @@ AA:BB:CC:DD:EE:FF
 ```
 
 **How it works:**
-- **Device name**: Looks up the device in `config.yaml` and uses its configured MAC address
-- **Direct MAC address**: Sends WOL packet directly to that MAC address (no config needed)
+- **Direct MAC address**: Sends WOL packet directly to that MAC address
 - **JSON with MAC**: Allows you to specify MAC address, optional target IP, and optional device name for logging
 
 ## Home Assistant Integration

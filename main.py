@@ -12,7 +12,6 @@ import os
 import signal
 import sys
 import time
-import yaml
 from typing import Dict, Any, Optional
 from wakeonlan import send_magic_packet
 import paho.mqtt.client as mqtt
@@ -21,9 +20,9 @@ import paho.mqtt.client as mqtt
 class MQTTWOLService:
     """MQTT Wake-on-LAN service that listens for wake commands via MQTT."""
     
-    def __init__(self, config_file: str = "config.yaml"):
-        """Initialize the service with configuration."""
-        self.config = self._load_config(config_file)
+    def __init__(self):
+        """Initialize the service with configuration from environment variables."""
+        self.config = self._load_config_from_env()
         self.mqtt_client = None
         self.running = False
         
@@ -35,24 +34,26 @@ class MQTTWOLService:
         signal.signal(signal.SIGINT, self._signal_handler)
         signal.signal(signal.SIGTERM, self._signal_handler)
         
-    def _load_config(self, config_file: str) -> Dict[str, Any]:
-        """Load configuration from YAML file with environment variable overrides."""
-        try:
-            with open(config_file, 'r') as f:
-                config = yaml.safe_load(f)
-        except FileNotFoundError:
-            self.logger.error(f"Configuration file {config_file} not found")
-            sys.exit(1)
-        except yaml.YAMLError as e:
-            self.logger.error(f"Error parsing configuration file: {e}")
+    def _load_config_from_env(self) -> Dict[str, Any]:
+        """Load configuration from environment variables."""
+        # Required environment variables
+        broker = os.getenv('MQTT_BROKER')
+        if not broker:
+            print("ERROR: MQTT_BROKER environment variable is required")
             sys.exit(1)
             
-        # Override with environment variables
-        config['mqtt']['broker'] = os.getenv('MQTT_BROKER', config['mqtt']['broker'])
-        config['mqtt']['port'] = int(os.getenv('MQTT_PORT', config['mqtt']['port']))
-        config['mqtt']['username'] = os.getenv('MQTT_USERNAME', config['mqtt'].get('username'))
-        config['mqtt']['password'] = os.getenv('MQTT_PASSWORD', config['mqtt'].get('password'))
-        config['mqtt']['topic'] = os.getenv('MQTT_TOPIC', config['mqtt']['topic'])
+        topic = os.getenv('MQTT_TOPIC', 'home/wake')
+        
+        config = {
+            'mqtt': {
+                'broker': broker,
+                'port': int(os.getenv('MQTT_PORT', '1883')),
+                'username': os.getenv('MQTT_USERNAME'),
+                'password': os.getenv('MQTT_PASSWORD'),
+                'use_tls': os.getenv('MQTT_USE_TLS', 'false').lower() == 'true',
+                'topic': topic
+            }
+        }
         
         return config
         
@@ -123,27 +124,15 @@ class MQTTWOLService:
                 self._wake_device(device_config)
                 return
             
-            # Handle device name lookup (original behavior)
-            device_name = message_data.get('device', '').lower()
+            # Handle device name lookup (no longer supported without config file)
+            device_name = message_data.get('device', '')
             
-            if not device_name:
-                self.logger.warning("No device or mac_address specified in message")
+            if device_name:
+                self.logger.warning(f"Device name '{device_name}' specified, but no config file loaded. Please use MAC address instead.")
+                self.logger.info("Send MAC address directly: 'AA:BB:CC:DD:EE:FF' or JSON: '{\"mac_address\": \"AA:BB:CC:DD:EE:FF\"}'")
                 return
                 
-            # Find device in configuration
-            device_config = None
-            for device in self.config.get('devices', []):
-                if device['name'].lower() == device_name:
-                    device_config = device
-                    break
-                    
-            if not device_config:
-                self.logger.warning(f"Device '{device_name}' not found in configuration")
-                self._list_available_devices()
-                return
-                
-            # Send Wake-on-LAN packet
-            self._wake_device(device_config)
+            self.logger.warning("No mac_address specified in message. Please send MAC address directly.")
             
         except Exception as e:
             self.logger.error(f"Error processing message: {e}")
@@ -167,14 +156,7 @@ class MQTTWOLService:
         except Exception as e:
             self.logger.error(f"Failed to send WOL packet to {device_name}: {e}")
             
-    def _list_available_devices(self):
-        """Log the list of available devices."""
-        devices = self.config.get('devices', [])
-        if devices:
-            device_names = [device['name'] for device in devices]
-            self.logger.info(f"Available devices: {', '.join(device_names)}")
-        else:
-            self.logger.info("No devices configured")
+
             
     def _is_mac_address(self, text: str) -> bool:
         """Check if the text looks like a MAC address."""
@@ -209,7 +191,7 @@ class MQTTWOLService:
         # Log configuration (without sensitive data)
         self.logger.info(f"MQTT Broker: {self.config['mqtt']['broker']}:{self.config['mqtt']['port']}")
         self.logger.info(f"MQTT Topic: {self.config['mqtt']['topic']}")
-        self._list_available_devices()
+        self.logger.info("Send MAC addresses directly via MQTT (no config file needed)")
         
         # Setup MQTT client
         self._setup_mqtt_client()
@@ -241,8 +223,7 @@ class MQTTWOLService:
 
 def main():
     """Main entry point."""
-    config_file = os.getenv('CONFIG_FILE', 'config.yaml')
-    service = MQTTWOLService(config_file)
+    service = MQTTWOLService()
     service.run()
 
 

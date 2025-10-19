@@ -10,25 +10,20 @@ services:
     restart: unless-stopped
     network_mode: host  # Required for WOL packets to work properly
     environment:
-      # MQTT Configuration (override config.yaml values)
-      - MQTT_BROKER=${MQTT_BROKER:-your-mqtt-broker-ip}
+      # MQTT Configuration (required)
+      - MQTT_BROKER=${MQTT_BROKER}  # Required: your MQTT broker IP
       - MQTT_PORT=${MQTT_PORT:-1883}
       - MQTT_USERNAME=${MQTT_USERNAME}  # Optional
       - MQTT_PASSWORD=${MQTT_PASSWORD}  # Optional
       - MQTT_TOPIC=${MQTT_TOPIC:-home/wake}
+      - MQTT_USE_TLS=${MQTT_USE_TLS:-false}
       
       # Logging
-      - LOG_LEVEL=INFO
-      
-      # Configuration file location
-      - CONFIG_FILE=/app/config.yaml
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
     
-    volumes:
-      # Mount config file if you want to modify it without rebuilding
-      - ./config.yaml:/app/config.yaml:ro
-      
-      # Optional: Mount logs directory for persistent logging
-      # - ./logs:/app/logs
+    # Optional: Mount logs directory for persistent logging
+    # volumes:
+    #   - ./logs:/app/logs
     
     # Health check
     healthcheck:
